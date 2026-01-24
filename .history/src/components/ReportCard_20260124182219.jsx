@@ -264,7 +264,7 @@ const PrintResultSummary = ({ tests }) => {
                 <ResultCard title="Half Yearly" value={hyPercentage} />
                 <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
                 <ResultCard title="Annual Exam" value={annualPercentage} />
-                {/* <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} /> */}
+                <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} />
 
                 <div className="col-span-1">
                     <div className={cn(
