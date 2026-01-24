@@ -57,7 +57,7 @@ export const transformStudentData = (rawData) => {
         const testName = (row['Test Name'] || '').trim();
 
         // Specific fix for "Re half Yearly" which might be categorized as "half Yearly"
-        if (testName.toLowerCase().includes('re half yearly')) {
+        if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) {
             type = 'Re-Half Yearly';
         } else if (type.toLowerCase() === 'half yearly') {
             type = 'Half Yearly'; // Normalize case/spacing
@@ -142,7 +142,7 @@ export const transformStudentData = (rawData) => {
         const testName = (row['Test Name'] || '').trim();
 
         // Match naming logic
-        if (testName.toLowerCase().includes('re half yearly')) {
+        if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) {
             type = 'Re-Half Yearly';
         } else if (type.toLowerCase() === 'half yearly') {
             type = 'Half Yearly';
@@ -198,7 +198,7 @@ export const transformStudentData = (rawData) => {
 
         // Normalize Type
         let normalizedType = type;
-        if (testName.toLowerCase().includes('re half yearly')) {
+        if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) {
             normalizedType = 'Re-Half Yearly';
         } else if (type.toLowerCase() === 'half yearly') {
             normalizedType = 'Half Yearly';
@@ -270,7 +270,7 @@ export const transformStudentData = (rawData) => {
         } else {
             // Check if it's a Major Exam
             let normalizedType = type;
-            if (testName.toLowerCase().includes('re half yearly')) normalizedType = 'Re-Half Yearly';
+            if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) normalizedType = 'Re-Half Yearly';
             else if (type.toLowerCase() === 'half yearly') normalizedType = 'Half Yearly';
             else if (type.toLowerCase().includes('annual')) normalizedType = 'Annual Exam';
             else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) normalizedType = 'Pre Board';

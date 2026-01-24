@@ -1,1 +1,102 @@
 @import "tailwindcss";
+
+@layer components {
+    .no-print {
+        @media print {
+            display: none !important;
+        }
+    }
+
+    .only-print {
+        display: none;
+
+        @media print {
+            display: block !important;
+        }
+    }
+}
+
+@media print {
+    @page {
+        margin: 0.5cm;
+        size: A4;
+    }
+
+    body {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Hide standard UI elements generally */
+    /* We will use specific classes in App.jsx but generic catch-all here helps */
+
+    /* Ensure grids snap to 1 col usually */
+    .print\:grid-cols-1 {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+
+    /* Remove shadows and borders that look bad in print */
+    .print\:shadow-none {
+        box-shadow: none !important;
+    }
+
+    .print\:border-none {
+        border: none !important;
+    }
+
+    /* Force page breaks */
+    .page-break-after {
+        page-break-after: always;
+    }
+
+    .avoid-break-inside {
+        page-break-inside: avoid;
+    }
+}
+
+/* Simulation Mode for HTML2Canvas capture */
+.printing-simulation {
+    background-color: white;
+    width: 210mm;
+    /* A4 width */
+    min-height: 297mm;
+    padding: 20px;
+    /* Approximate padding */
+    margin: 0;
+}
+
+.printing-simulation .only-print {
+    display: block !important;
+}
+
+.printing-simulation .no-print,
+.printing-simulation .print\:hidden {
+    display: none !important;
+}
+
+/* Override essential Tailwind print: variants that we rely on */
+.printing-simulation .print\:w-\[210mm\] {
+    width: 100% !important;
+    /* Container is already 210mm */
+    max-width: none !important;
+}
+
+.printing-simulation .print\:overflow-visible {
+    overflow: visible !important;
+}
+
+.printing-simulation .print\:shadow-none {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0;
+    /* Add a light border instead of shadow for structure if needed, or just flat */
+}
+
+/* Adjust colors if they differ significantly in print mode logic */
+.printing-simulation .print\:bg-slate-100 {
+    background-color: #f1f5f9 !important;
+}
+
+.printing-simulation .print\:text-slate-800 {
+    color: #1e293b !important;
+}

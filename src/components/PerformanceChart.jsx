@@ -1,4 +1,4 @@
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, LabelList } from 'recharts';
 import { Card } from './ReportCard';
 
 const PerformanceChart = ({ data, color = "#6366f1", chartType = "line" }) => {
@@ -37,23 +37,23 @@ const PerformanceChart = ({ data, color = "#6366f1", chartType = "line" }) => {
         return null;
     };
 
-    const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#14b8a6'];
+    const COLORS = ['#10b981', '#14b8a6', '#059669', '#0d9488', '#f59e0b', '#84cc16', '#ef4444', '#6366f1'];
 
     return (
-        <div className="w-full h-[300px] mt-4 mb-2">
+        <div className="w-full max-w-[190mm] mx-auto h-[300px] print:h-[260px] mt-4 mb-2">
             <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'bar' ? (
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <BarChart data={data} margin={{ top: 20, right: 40, left: 10, bottom: 100 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis
                             dataKey="testName"
                             stroke="#94a3b8"
-                            fontSize={10}
+                            fontSize={9}
                             tickLine={false}
                             axisLine={false}
                             dy={10}
                             interval={0}
-                            angle={-25}
+                            angle={-30}
                             textAnchor="end"
                         />
                         <YAxis
@@ -64,11 +64,18 @@ const PerformanceChart = ({ data, color = "#6366f1", chartType = "line" }) => {
                             domain={[0, 100]}
                             dx={-10}
                         />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                        <Bar dataKey="percentage" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                        <Bar dataKey="percentage" radius={[8, 8, 0, 0]} maxBarSize={60} isAnimationActive={false}>
                             {data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />
                             ))}
+                            <LabelList
+                                dataKey="percentage"
+                                position="top"
+                                formatter={(val) => `${val}%`}
+                                fill="#64748b"
+                                fontSize={10}
+                                fontWeight="bold"
+                            />
                         </Bar>
                     </BarChart>
                 ) : (
@@ -99,7 +106,7 @@ const PerformanceChart = ({ data, color = "#6366f1", chartType = "line" }) => {
                             strokeWidth={3}
                             dot={<CustomDot />}
                             activeDot={{ r: 6, fill: color, stroke: "white", strokeWidth: 3 }}
-                            animationDuration={1500}
+                            isAnimationActive={false}
                             strokeOpacity={1}
                         />
                     </LineChart>

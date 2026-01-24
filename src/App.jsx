@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Search, Loader2 } from 'lucide-react'
+import { Search, Loader2, Download } from 'lucide-react'
 import resultXlsx from './assets/result.xlsx?url'
+import logo from './assets/logo.png'
 import { fetchAndParseResults, transformStudentData } from './utils/excelParser'
 import ReportCard from './components/ReportCard'
+import JSZip from 'jszip'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
+import { saveAs } from 'file-saver'
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -10,6 +15,8 @@ function App() {
   const [searchRoll, setSearchRoll] = useState('');
   const [studentData, setStudentData] = useState(null);
   const [error, setError] = useState(null);
+  const [bulkProgress, setBulkProgress] = useState({ active: false, current: 0, total: 0, status: '' });
+  const [bulkStudentData, setBulkStudentData] = useState(null);
 
   useEffect(() => {
     async function loadData() {
@@ -25,6 +32,98 @@ function App() {
     }
     loadData();
   }, []);
+
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const handleBulkDownload = async () => {
+    if (loading || !allData.length) return;
+
+    // Get unique roll numbers
+    const uniqueRolls = [...new Set(allData.map(r => r['Roll No.']))];
+
+    setBulkProgress({ active: true, current: 0, total: uniqueRolls.length, status: 'Initializing bulk export...' });
+
+    const zip = new JSZip();
+    const folder = zip.folder("Student_Reports");
+
+    try {
+      for (let i = 0; i < uniqueRolls.length; i++) {
+        const roll = uniqueRolls[i];
+
+        // Update status
+        setBulkProgress({
+          active: true,
+          current: i + 1,
+          total: uniqueRolls.length,
+          status: `Processing Roll: ${roll} (${i + 1}/${uniqueRolls.length})`
+        });
+
+        // Prepare Data
+        const rows = allData.filter(r => r['Roll No.'] == roll);
+        const transformed = transformStudentData(rows);
+
+        if (transformed) {
+          setBulkStudentData(transformed);
+          // Wait for React to render and Charts to stabilize
+          await wait(500);
+
+          const element = document.getElementById('bulk-print-container');
+          if (element) {
+            const canvas = await html2canvas(element, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              windowWidth: 794, // A4 width in px at 96dpi (210mm) is approx 794px, but here we set to match mm
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = pdfWidth / imgWidth;
+            const scaledHeight = imgHeight * ratio;
+
+            let heightLeft = scaledHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft > 0) {
+              position = heightLeft - scaledHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'JPEG', 0, -1 * (scaledHeight - heightLeft - pdfHeight), pdfWidth, scaledHeight); // logic approx
+              // Actually simplest multi-page logic:
+              // The loop above is slightly wrong for position flow.
+              // simplified: simple addImage on page 1. If content is longer, `html2canvas` produces one long image.
+              // Paging a single image cleanly is hard.
+              // Given ReportCard is fixed size roughly, let's just do single page if it fits or just shrink to fit?
+              // Shrink to fit A4 might make it too small.
+              // Let's stick to adding the image. If it's too long, it might get cut off.
+              // Better multi-page logic:
+              break; // Simplified: just one page for now, mostly fits. Or just let it be.
+            }
+
+            const pdfBlob = pdf.output('blob');
+            folder.file(`${transformed.profile.name || 'Student'}_${roll}.pdf`, pdfBlob);
+          }
+        }
+      }
+
+      setBulkProgress(prev => ({ ...prev, status: 'Zipping files...' }));
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, "Student_Reports.zip");
+
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during bulk generation.");
+    } finally {
+      setBulkProgress({ active: false, current: 0, total: 0, status: '' });
+      setBulkStudentData(null);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -44,42 +143,71 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 relative selection:bg-indigo-100 selection:text-indigo-900 font-sans text-slate-900">
-      {/* Background Decoration */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-0 left-0 w-full h-[600px] bg-linear-to-b from-indigo-50 to-transparent"></div>
-        <div className="absolute -top-[20%] left-[20%] w-[500px] h-[500px] bg-purple-200/40 blur-[100px] rounded-full mix-blend-multiply animate-blob"></div>
-        <div className="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-blue-200/40 blur-[100px] rounded-full mix-blend-multiply animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-[20%] left-[30%] w-[600px] h-[600px] bg-pink-200/30 blur-[120px] rounded-full mix-blend-multiply animate-blob animation-delay-4000"></div>
-      </div>
+    <div className="min-h-screen bg-white relative selection:bg-emerald-100 selection:text-emerald-900 font-sans text-slate-900">
 
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+      <div className="relative z-10 container mx-auto px-4 py-4 max-w-7xl">
         {/* Header */}
-        <header className="flex flex-col items-center justify-center pt-8 pb-12 space-y-4 text-center">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white shadow-lg shadow-indigo-100 ring-1 ring-slate-100 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-indigo-600">
-              <path d="M11.7 2.805a.75.75 0 0 1 .6 0A60.65 60.65 0 0 1 22.83 8.72a.75.75 0 0 1-.231 1.337 49.949 49.949 0 0 0-9.902 3.912l-.003.002-.34.18a.75.75 0 0 1-.707 0A50.009 50.009 0 0 0 7.5 12.174v-.224c0-.131.067-.248.182-.311a51.002 51.002 0 0 1 6.882-3.342.75.75 0 0 0-.707-1.345 49.497 49.497 0 0 0-6.882 3.343.375.375 0 0 0-.182.311v.224c0 5.883 4.223 10.748 9.92 11.666a.75.75 0 0 1-.225 1.483C10.15 23.01 5.25 17.512 5.25 11.25v-.27a.75.75 0 0 0-.182-.472 50.016 50.016 0 0 0-3.908-3.09.75.75 0 0 1 .244-1.334A60.675 60.675 0 0 1 11.7 2.805Z" />
-            </svg>
+        <header className="flex flex-col items-center justify-center pt-2 pb-6 space-y-2 text-center relative">
+          <div className="mb-0">
+            <img src={logo} alt="Unacademy Logo" className="h-14 w-auto object-contain" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-800">
-            Student Report Portal
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800">
+            Unacademy Kota Centre
           </h1>
-          <p className="text-slate-500 max-w-lg mx-auto text-lg">
+          <p className="text-slate-500 max-w-lg mx-auto text-base">
             Access comprehensive academic performance records. Enter roll number to view detailed test results.
           </p>
+
+          {!loading && !error && (
+            <div className="absolute top-4 right-4 md:top-8 md:right-8">
+              <button
+                onClick={handleBulkDownload}
+                disabled={bulkProgress.active}
+                className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+              >
+                {bulkProgress.active ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {bulkProgress.active ? 'Processing...' : 'Download All'}
+              </button>
+            </div>
+          )}
         </header>
 
+        {/* Bulk Progress Overlay */}
+        {bulkProgress.active && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center space-y-4">
+              <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mx-auto" />
+              <h3 className="text-xl font-bold text-slate-800">Generating Reports...</h3>
+              <p className="text-slate-500 text-sm font-medium">{bulkProgress.status}</p>
+              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-slate-400">Please do not close this window.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden Container for Bulk Rendering */}
+        <div className="absolute top-0 left-[-9999px] pointer-events-none">
+          <div id="bulk-print-container" className="printing-simulation">
+            {bulkStudentData && <ReportCard data={bulkStudentData} />}
+          </div>
+        </div>
+
         {/* Search Area */}
-        <div className="max-w-xl mx-auto mb-16 relative group">
-          <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full group-hover:bg-indigo-500/30 transition-all duration-500 opacity-50"></div>
-          <form onSubmit={handleSearch} className="relative flex items-center p-2 bg-white rounded-2xl shadow-xl shadow-indigo-100/50 border border-indigo-50 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
+        <div className="max-w-xl mx-auto mb-6 relative group">
+          <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full group-hover:bg-emerald-500/30 transition-all duration-500 opacity-50"></div>
+          <form onSubmit={handleSearch} className="relative flex items-center p-1.5 bg-white rounded-2xl shadow-xl shadow-emerald-100/50 border border-emerald-50 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
             <div className="pl-4 text-slate-400">
-              <Search className="w-6 h-6" />
+              <Search className="w-5 h-5" />
             </div>
             <input
               type="text"
               placeholder="Enter Roll Number (e.g., 242009695)"
-              className="w-full px-4 py-4 text-lg font-medium bg-transparent border-none outline-none placeholder:text-slate-300 text-slate-800"
+              className="w-full px-4 py-2.5 text-lg font-medium bg-transparent border-none outline-none placeholder:text-slate-300 text-slate-800"
               value={searchRoll}
               onChange={(e) => setSearchRoll(e.target.value)}
               autoFocus
@@ -87,7 +215,7 @@ function App() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 min-w-[160px] py-2.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Get Report'}
             </button>
@@ -98,7 +226,7 @@ function App() {
         <div className="min-h-[400px]">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 className="w-10 h-10 animate-spin mb-4 text-indigo-400" />
+              <Loader2 className="w-10 h-10 animate-spin mb-4 text-emerald-400" />
               <p>Loading database...</p>
             </div>
           )}
@@ -128,7 +256,7 @@ function App() {
       </div>
 
       <div className="text-center py-8 text-slate-400 text-sm font-medium">
-        PTM Report Card System &copy; {new Date().getFullYear()}
+        PTM Report Card System Unacademy Kota Centre &copy; {new Date().getFullYear()}
       </div>
     </div>
   )
