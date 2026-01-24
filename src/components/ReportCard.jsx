@@ -561,7 +561,7 @@ export default function ReportCard({ data }) {
                         {data.graphs.st_ot && data.graphs.st_ot.length > 0 && (
                             <Card className="p-5 bg-white/60 break-inside-avoid">
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div> ST / OT Trend
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Subjective / Objective Test Trend
                                 </h3>
                                 <PerformanceChart data={data.graphs.st_ot} color="#10b981" chartType="bar" />
                             </Card>
@@ -570,7 +570,7 @@ export default function ReportCard({ data }) {
                         {data.graphs.major && data.graphs.major.length > 0 && (
                             <Card className="p-5 bg-white/60 break-inside-avoid">
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-teal-600 mb-2 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-teal-500"></div> Major Exams Trend (HY / Re-HY / Annual)
+                                    <div className="w-2 h-2 rounded-full bg-teal-500"></div> Major Exams Trend (Half Yearly / Re-Half Yearly / Annual / Pre-Board)
                                 </h3>
                                 <PerformanceChart data={data.graphs.major} color="#14b8a6" chartType="bar" />
                             </Card>
