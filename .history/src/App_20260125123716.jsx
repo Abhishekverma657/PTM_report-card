@@ -158,7 +158,7 @@ function App() {
             Access comprehensive academic performance records. Enter roll number to view detailed test results.
           </p>
 
-          {/* {!loading && !error && (
+          {!loading && !error && (
             <div className="absolute top-4 right-4 md:top-8 md:right-8">
               <button
                 onClick={handleBulkDownload}
@@ -169,7 +169,7 @@ function App() {
                 {bulkProgress.active ? 'Processing...' : ''}
               </button>
             </div>
-          )} */}
+          )}
         </header>
 
         {/* Bulk Progress Overlay */}
