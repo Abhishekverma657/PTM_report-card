@@ -278,57 +278,45 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     );
 
     // Determine which tests to show based on class
-   const is10thClass = classNumber === '10' || classNumber === 10;
+    const is10thClass = classNumber === '10' || classNumber === 10;
 
-return (
-    <div className="only-print w-full mb-8 break-inside-avoid font-sans">
-        <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-            Performance Summary
-        </h2>
 
-        <div className={cn("gap-3", is10thClass ? "grid grid-cols-2" : "grid grid-cols-4")}>
-            {!is10thClass && (
-                <>
-                    <ResultCard title="Half Yearly" value={hyPercentage} />
-                    <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
-                    <ResultCard title="Annual Exam" value={annualPercentage} />
-                </>
-            )}
+    return (
+        <div className="only-print w-full mb-8 break-inside-avoid font-sans">
+            <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                Performance Summary
+            </h2>
+            <div className={cn("gap-3", is10thClass ? "grid grid-cols-1" : "grid grid-cols-5")}>
+                {!is10thClass && (
+                    <>
+                        <ResultCard title="Half Yearly" value={hyPercentage} />
+                        <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
+                        <ResultCard title="Annual Exam" value={classNumber} />
+                    </>
+                )}
 
-            {is10thClass && (
                 <ResultCard title="Pre Board" value={prePercentage} />
-            )}
 
-            <div className="col-span-1">
-                <div className="rounded-xl border p-4 flex flex-col justify-center items-center h-full bg-slate-900 border-slate-800 text-white">
-                    <span className="text-[10px] uppercase tracking-wider font-bold mb-1 text-slate-400">
-                        Final Result
-                    </span>
-                    <span
-                        className={cn(
-                            "text-2xl font-black tracking-tight",
-                            resultStatus === 'PASS'
-                                ? "text-emerald-400"
-                                : "text-rose-400"
-                        )}
-                    >
-                        {resultStatus}
-                    </span>
+                <div className={cn(is10thClass ? "col-span-1" : "col-span-1")}>
+                    <div className={cn(
+                        "rounded-xl border p-4 flex flex-col justify-center items-center h-full bg-slate-900 border-slate-800 text-white"
+                    )}>
+                        <span className="text-[10px] uppercase tracking-wider font-bold mb-1 text-slate-400">Final Result</span>
+                        <span className={cn("text-2xl font-black tracking-tight", resultStatus === 'PASS' ? "text-emerald-400" : "text-rose-400")}>{resultStatus}</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {/* Remarks */}
-        <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <p className="text-sm font-semibold text-slate-700">
-                <span className="font-bold text-slate-800">Remarks: </span>
-                {remarks}
-            </p>
+            {/* Remarks Section */}
+            <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-sm font-semibold text-slate-700">
+                    <span className="font-bold text-slate-800">Remarks: </span>
+                    {remarks}
+                </p>
+            </div>
         </div>
-    </div>
-);
-
+    );
 };
 
 const PrintPerformanceTable = ({ tests }) => {

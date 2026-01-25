@@ -278,7 +278,7 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     );
 
     // Determine which tests to show based on class
-   const is10thClass = classNumber === '10' || classNumber === 10;
+  const is10thClass = classNumber === '10' || classNumber === 10;
 
 return (
     <div className="only-print w-full mb-8 break-inside-avoid font-sans">
@@ -329,7 +329,6 @@ return (
     </div>
 );
 
-};
 
 const PrintPerformanceTable = ({ tests }) => {
     const formatTestName = (name) => {
@@ -611,4 +610,4 @@ export default function ReportCard({ data }) {
             </div>
         </div>
     );
-}
+

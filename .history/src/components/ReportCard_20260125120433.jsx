@@ -154,6 +154,7 @@ const TestGroupCard = ({ group }) => {
                         <Badge variant={group.isConsolidated ? "primary" : "outline"}>
                             {group.typeTag}
                         </Badge>
+                        {/* Show date for single tests (ST/OT), or if it's consolidated but we have a date field (less likely to be singular) */}
                         {!group.isConsolidated && group.date && (
                             <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
                                 <CalendarDays className="w-3 h-3" /> {group.date}
@@ -221,10 +222,10 @@ const SHORT_SUBJECTS = {
 
 const SUBJECT_ORDER = ['Physics', 'Chemistry', 'Biology', 'Hindi', 'English', 'Mathematics', 'Social Studies', 'Mental Ability'];
 
-const PrintResultSummary = ({ tests, classNumber }) => {
+const PrintResultSummary = ({ tests }) => {
+    // Logic from previous steps
     const sortedTests = [...tests].sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
-    
-    // Find tests
+
     const hyTest = sortedTests.find(t => t.typeTag === 'Half Yearly');
     const hyPercentage = hyTest ? `${hyTest.percentage}%` : '-';
 
@@ -234,35 +235,11 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     const annualTest = sortedTests.find(t => t.typeTag === 'Annual Exam');
     const annualPercentage = annualTest ? `${annualTest.percentage}%` : '-';
 
-    const preTest = sortedTests.find(t =>
-        t.typeTag === 'Pre Board' ||
-        t.typeTag === 'Pre Board' ||
-        (t.displayTitle && t.displayTitle.toLowerCase().includes('Pre Board'))
-    );
-    const prePercentage = preTest ? `${preTest.percentage}%` : '-';
-
-    // Calculate overall percentage and status
     const cumulativeTotalObtained = sortedTests.reduce((acc, t) => acc + t.totalObtained, 0);
     const cumulativeTotalMax = sortedTests.reduce((acc, t) => acc + t.totalMax, 0);
     const overallVal = cumulativeTotalMax > 0 ? (cumulativeTotalObtained / cumulativeTotalMax) * 100 : 0;
-    const resultStatus = overallVal >= 33 ? 'PASS' : 'FAIL';
-
-    // Get remarks based on performance
-    const getRemarks = (percentage) => {
-        if (percentage < 33) {
-            return "Performance is below expectations and needs significant improvement.";
-        } else if (percentage < 60) {
-            return "Needs improvement through regular practice and focused effort.";
-        } else if (percentage < 75) {
-            return "Has shown satisfactory progress and can perform better with consistency.";
-        } else if (percentage < 90) {
-            return "Has demonstrated very good understanding and consistent performance.";
-        } else {
-            return "Has shown excellent academic performance and commendable consistency.";
-        }
-    };
-
-    const remarks = getRemarks(overallVal);
+    const overallPercentage = cumulativeTotalMax > 0 ? overallVal.toFixed(2) : '0.00';
+    const resultStatus = overallVal >= 33 ? 'PASS' : '-';
 
     const ResultCard = ({ title, value, subtext, highlight }) => (
         <div className={cn(
@@ -277,58 +254,29 @@ const PrintResultSummary = ({ tests, classNumber }) => {
         </div>
     );
 
-    // Determine which tests to show based on class
-   const is10thClass = classNumber === '10' || classNumber === 10;
+    return (
+        <div className="only-print w-full mb-8 break-inside-avoid font-sans">
+            <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                Performance Summary
+            </h2>
+            <div className="grid grid-cols-5 gap-3">
+                <ResultCard title="Half Yearly" value={hyPercentage} />
+                <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
+                <ResultCard title="Annual Exam" value={annualPercentage} />
+                <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} />
 
-return (
-    <div className="only-print w-full mb-8 break-inside-avoid font-sans">
-        <h2 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-            Performance Summary
-        </h2>
-
-        <div className={cn("gap-3", is10thClass ? "grid grid-cols-2" : "grid grid-cols-4")}>
-            {!is10thClass && (
-                <>
-                    <ResultCard title="Half Yearly" value={hyPercentage} />
-                    <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
-                    <ResultCard title="Annual Exam" value={annualPercentage} />
-                </>
-            )}
-
-            {is10thClass && (
-                <ResultCard title="Pre Board" value={prePercentage} />
-            )}
-
-            <div className="col-span-1">
-                <div className="rounded-xl border p-4 flex flex-col justify-center items-center h-full bg-slate-900 border-slate-800 text-white">
-                    <span className="text-[10px] uppercase tracking-wider font-bold mb-1 text-slate-400">
-                        Final Result
-                    </span>
-                    <span
-                        className={cn(
-                            "text-2xl font-black tracking-tight",
-                            resultStatus === 'PASS'
-                                ? "text-emerald-400"
-                                : "text-rose-400"
-                        )}
-                    >
-                        {resultStatus}
-                    </span>
+                <div className="col-span-1">
+                    <div className={cn(
+                        "rounded-xl border p-4 flex flex-col justify-center items-center h-full bg-slate-900 border-slate-800 text-white"
+                    )}>
+                        <span className="text-[10px] uppercase tracking-wider font-bold mb-1 text-slate-400">Final Result</span>
+                        <span className={cn("text-2xl font-black tracking-tight", resultStatus === 'PASS' ? "text-emerald-400" : "text-rose-400")}>{resultStatus}</span>
+                    </div>
                 </div>
             </div>
         </div>
-
-        {/* Remarks */}
-        <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <p className="text-sm font-semibold text-slate-700">
-                <span className="font-bold text-slate-800">Remarks: </span>
-                {remarks}
-            </p>
-        </div>
-    </div>
-);
-
+    );
 };
 
 const PrintPerformanceTable = ({ tests }) => {
@@ -347,15 +295,16 @@ const PrintPerformanceTable = ({ tests }) => {
             'Half Yearly',
             'Re-Half Yearly',
             'Annual Exam',
-            'Pre Board'
+            'Pre-Board'
         ];
 
         const getPriority = (t) => {
             const title = t.displayTitle || t.typeTag || '';
+            // Check specific priority items
             for (let i = 0; i < priorityOrder.length; i++) {
-                if (title.toLowerCase().includes(priorityOrder[i].toLowerCase())) return i + 1;
+                if (title.toLowerCase().includes(priorityOrder[i].toLowerCase())) return i + 1; // Priority 1+
             }
-            return 0;
+            return 0; // Default priority for Minor, Major, etc.
         };
 
         const pA = getPriority(a);
@@ -368,6 +317,7 @@ const PrintPerformanceTable = ({ tests }) => {
         return dateA - dateB;
     });
 
+    // Filter subjects that actually have data in at least one test
     const activeSubjects = SUBJECT_ORDER.filter(subject => {
         return tests.some(test => {
             const sub = test.subjects.find(s => s.name === subject);
@@ -431,29 +381,55 @@ const PrintPerformanceTable = ({ tests }) => {
 };
 
 const PrintDeclaration = ({ tests }) => {
+    // Calculate Overall Percentage and Status
     const cumulativeTotalObtained = tests?.reduce((acc, t) => acc + t.totalObtained, 0) || 0;
     const cumulativeTotalMax = tests?.reduce((acc, t) => acc + t.totalMax, 0) || 0;
     const overallVal = cumulativeTotalMax > 0 ? (cumulativeTotalObtained / cumulativeTotalMax) * 100 : 0;
 
     let performanceStatus = "Satisfactory progress";
+    let remarks = "Needs improvement through regular practice and focused effort.";
 
     if (overallVal < 33) {
         performanceStatus = "Needs improvement";
+        remarks = "Performance is below expectations and needs significant improvement.";
     } else if (overallVal < 60) {
         performanceStatus = "Needs improvement";
+        remarks = "Needs improvement through regular practice and focused effort.";
     } else if (overallVal < 75) {
         performanceStatus = "Satisfactory progress";
+        remarks = "Has shown satisfactory progress and can perform better with consistency.";
     } else if (overallVal < 90) {
         performanceStatus = "Consistent and commendable";
+        remarks = "Has demonstrated very good understanding and consistent performance.";
     } else {
         performanceStatus = "Outstanding Achievement";
+        remarks = "Has shown excellent academic performance and commendable consistency.";
     }
 
     return (
+
         <div className="only-print w-full mt-4 pt-4 break-inside-avoid font-sans page-break-before-auto">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
+                <h3 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2 border-b border-slate-200 pb-2">
+                    Remarks & Final Status
+                </h3>
+                <div className="space-y-3">
+                    <div className="flex items-baseline">
+                        <span className="w-32 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Performance:</span>
+                        <span className="text-sm font-medium text-slate-800 border-b border-slate-300 border-dashed grow pb-0.5">{performanceStatus}</span>
+                    </div>
+                    <div className="flex items-baseline">
+                        <span className="w-32 text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Remarks:</span>
+                        <span className="text-sm font-medium text-slate-800 border-b border-slate-300 border-dashed grow pb-0.5">{remarks}</span>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex justify-end pt-2 pr-12 pb-4">
                 <div className="flex flex-col items-center">
                     <img src={seal} alt="Official Seal" className="w-24 h-24 object-contain mix-blend-multiply" />
+
+
                 </div>
             </div>
         </div>
@@ -486,11 +462,7 @@ export default function ReportCard({ data }) {
                 <StudentHeader profile={data.profile} />
 
                 {/* Print Result Summary - NOW ON TOP */}
-                <PrintResultSummary
-                    tests={data.tests}
-                    classNumber={data.profile.class}
-                />
-
+                <PrintResultSummary tests={data.tests} />
 
                 {/* Detailed Table */}
                 <PrintPerformanceTable tests={data.tests} />
@@ -598,7 +570,7 @@ export default function ReportCard({ data }) {
                         {data.graphs.major && data.graphs.major.length > 0 && (
                             <Card className="p-5 bg-white/60 break-inside-avoid">
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-teal-600 mb-2 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-teal-500"></div> Major Exams Trend (Half Yearly / Re-Half Yearly / Annual / Pre - Board)
+                                    <div className="w-2 h-2 rounded-full bg-teal-500"></div> Major Exams Trend (Half Yearly / Re-Half Yearly / Annual / Pre-Board)
                                 </h3>
                                 <PerformanceChart data={data.graphs.major} color="#14b8a6" chartType="bar" />
                             </Card>
