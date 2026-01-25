@@ -222,7 +222,7 @@ const SHORT_SUBJECTS = {
 
 const SUBJECT_ORDER = ['Physics', 'Chemistry', 'Biology', 'Hindi', 'English', 'Mathematics', 'Social Studies', 'Mental Ability'];
 
-const PrintResultSummary = ({ tests, classNumber }) => {
+const PrintResultSummary = ({ tests,classNumber }) => {
     // Logic from previous steps
     const sortedTests = [...tests].sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
 
@@ -266,9 +266,7 @@ const PrintResultSummary = ({ tests, classNumber }) => {
                 <ResultCard title="Half Yearly" value={hyPercentage} />
                 <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
                 <ResultCard title="Annual Exam" value={annualPercentage} />
-                {classNumber === 10 && (
-                    <ResultCard title="Pre Board" value={prePercentage} />
-                )}
+                <ResultCard title="Pre Board" value={prePercentage} />
                 {/* <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} /> */}
 
                 <div className="col-span-1">
@@ -467,11 +465,8 @@ export default function ReportCard({ data }) {
                 <StudentHeader profile={data.profile} />
 
                 {/* Print Result Summary - NOW ON TOP */}
-                <PrintResultSummary
-                    tests={data.tests}
-                    classNumber={data.profile.class}
-                />
-
+                tests={data.tests}
+    classNumber={data.class}
 
                 {/* Detailed Table */}
                 <PrintPerformanceTable tests={data.tests} />
