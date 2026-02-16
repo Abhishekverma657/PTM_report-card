@@ -227,15 +227,9 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     const sortedTests = [...tests].sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
 
     const hyTest = sortedTests.find(t => t.typeTag === 'Half Yearly');
-    const hyPercentage = hyTest ? `${hyTest.percentage}%` : '-';
-
     const reHyTest = sortedTests.find(t => t.typeTag === 'Re-Half Yearly');
-    const reHyPercentage = reHyTest ? `${reHyTest.percentage}%` : '-';
-
     const annualTest = sortedTests.find(t => t.typeTag === 'Annual Exam');
-    const annualPercentage = annualTest ? `${annualTest.percentage}%` : '-';
     const preTests = sortedTests.filter(t => t.typeTag.toLowerCase().includes('pre board'));
-
     const cumulativeTotalObtained = sortedTests.reduce((acc, t) => acc + t.totalObtained, 0);
     const cumulativeTotalMax = sortedTests.reduce((acc, t) => acc + t.totalMax, 0);
     const overallVal = cumulativeTotalMax > 0 ? (cumulativeTotalObtained / cumulativeTotalMax) * 100 : 0;
@@ -262,17 +256,13 @@ const PrintResultSummary = ({ tests, classNumber }) => {
                 Performance Summary
             </h2>
             <div className="grid grid-cols-5 gap-3">
-                <ResultCard title="Half Yearly" value={hyPercentage} />
-                <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
-                <ResultCard title="Annual Exam" value={annualPercentage} />
-                {classNumber === 10 && (
-                    preTests.length > 0 ? (
-                        preTests.map((t) => (
-                            <ResultCard key={t.id} title={t.typeTag} value={`${t.percentage}%`} />
-                        ))
-                    ) : (
-                        <ResultCard title="Pre Board" value="-" />
-                    )
+                {hyTest && <ResultCard title="Half Yearly" value={`${hyTest.percentage}%`} />}
+                {reHyTest && <ResultCard title="Re-Half Yearly" value={`${reHyTest.percentage}%`} />}
+                {annualTest && <ResultCard title="Annual Exam" value={`${annualTest.percentage}%`} />}
+                {classNumber === 10 && preTests.length > 0 && (
+                    preTests.map((t) => (
+                        <ResultCard key={t.id} title={t.typeTag} value={`${t.percentage}%`} />
+                    ))
                 )}
                 {/* <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} /> */}
 
