@@ -118,12 +118,14 @@ export const transformStudentData = (rawData) => {
                     max: maxMarks ?? '-'
                 });
 
-                // Only calculate totals for subjects that were actually attempted (has numeric marks)
-                // This ensures "Absent" or "Empty" subjects don't dilute the percentage
-                if (typeof marks === 'number') {
-                    groups[groupKey].totalObtained += marks;
-                    if (typeof maxMarks === 'number') {
-                        groups[groupKey].totalMax += maxMarks;
+                // Always add max marks if defined, regardless of attendance
+                if (typeof maxMarks === 'number' && maxMarks > 0) {
+                    groups[groupKey].totalMax += maxMarks;
+                    groups[groupKey].maxSubjectsCount = (groups[groupKey].maxSubjectsCount || 0) + 1;
+
+                    if (typeof marks === 'number') {
+                        groups[groupKey].totalObtained += marks;
+                        groups[groupKey].attemptedSubjectsCount = (groups[groupKey].attemptedSubjectsCount || 0) + 1;
                     }
                 }
             }
@@ -132,9 +134,19 @@ export const transformStudentData = (rawData) => {
 
     // Convert groups object to array and calculate percentages
     const resultTests = Object.values(groups).map(group => {
-        const percentage = group.totalMax > 0
-            ? ((group.totalObtained / group.totalMax) * 100).toFixed(2)
-            : '-';
+        // Check if all subjects were attempted
+        const isComplete = group.maxSubjectsCount > 0 &&
+            (group.attemptedSubjectsCount || 0) === group.maxSubjectsCount;
+
+        let percentage = '-';
+        if (group.totalMax > 0) {
+            const val = (group.totalObtained / group.totalMax) * 100;
+            if (isComplete) {
+                percentage = val.toFixed(2);
+            } else {
+                percentage = 'NA';
+            }
+        }
 
         return {
             id: group.id,
@@ -235,10 +247,11 @@ export const transformStudentData = (rawData) => {
             Object.keys(SUBJECT_MAP).forEach(key => {
                 const m = row[key];
                 const mm = row[`${key}(MM)`];
-                if (typeof m === 'number') {
-                    majorAggregates[normalizedType].totalObtained += m;
-                    if (typeof mm === 'number') {
-                        majorAggregates[normalizedType].totalMax += mm;
+                // Always add max marks (fix denominator)
+                if (typeof mm === 'number' && mm > 0) {
+                    majorAggregates[normalizedType].totalMax += mm;
+                    if (typeof m === 'number') {
+                        majorAggregates[normalizedType].totalObtained += m;
                     }
                 }
             });

@@ -169,11 +169,12 @@ const TestGroupCard = ({ group }) => {
                 <div className="text-right">
                     <div className={cn(
                         "text-2xl font-black tracking-tight",
-                        group.percentage >= 90 ? "text-emerald-500" :
-                            group.percentage >= 75 ? "text-emerald-600" :
-                                group.percentage >= 50 ? "text-amber-500" : "text-rose-500"
+                        group.percentage === 'NA' ? "text-slate-400" :
+                            group.percentage >= 90 ? "text-emerald-500" :
+                                group.percentage >= 75 ? "text-emerald-600" :
+                                    group.percentage >= 50 ? "text-amber-500" : "text-rose-500"
                     )}>
-                        {group.percentage}%
+                        {group.percentage === 'NA' ? 'NA' : `${group.percentage}%`}
                     </div>
                 </div>
             </div>
@@ -234,7 +235,9 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     const cumulativeTotalMax = sortedTests.reduce((acc, t) => acc + t.totalMax, 0);
     const overallVal = cumulativeTotalMax > 0 ? (cumulativeTotalObtained / cumulativeTotalMax) * 100 : 0;
     const overallPercentage = cumulativeTotalMax > 0 ? overallVal.toFixed(2) : '0.00';
-    const resultStatus = overallVal >= 33 ? 'PASS' : '-';
+
+    const hasNA = tests.some(t => t.percentage === 'NA');
+    const resultStatus = hasNA ? 'NA' : (overallVal >= 33 ? 'PASS' : '-');
 
     const ResultCard = ({ title, value, subtext, highlight }) => (
         <div className={cn(
@@ -256,12 +259,12 @@ const PrintResultSummary = ({ tests, classNumber }) => {
                 Performance Summary
             </h2>
             <div className="grid grid-cols-5 gap-3">
-                {hyTest && <ResultCard title="Half Yearly" value={`${hyTest.percentage}%`} />}
-                {reHyTest && <ResultCard title="Re-Half Yearly" value={`${reHyTest.percentage}%`} />}
-                {annualTest && <ResultCard title="Annual Exam" value={`${annualTest.percentage}%`} />}
+                {hyTest && <ResultCard title="Half Yearly" value={hyTest.percentage === 'NA' ? 'NA' : `${hyTest.percentage}%`} />}
+                {reHyTest && <ResultCard title="Re-Half Yearly" value={reHyTest.percentage === 'NA' ? 'NA' : `${reHyTest.percentage}%`} />}
+                {annualTest && <ResultCard title="Annual Exam" value={annualTest.percentage === 'NA' ? 'NA' : `${annualTest.percentage}%`} />}
                 {classNumber === 10 && preTests.length > 0 && (
                     preTests.map((t) => (
-                        <ResultCard key={t.id} title={t.typeTag} value={`${t.percentage}%`} />
+                        <ResultCard key={t.id} title={t.typeTag} value={t.percentage === 'NA' ? 'NA' : `${t.percentage}%`} />
                     ))
                 )}
                 {/* <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} /> */}
@@ -271,7 +274,10 @@ const PrintResultSummary = ({ tests, classNumber }) => {
                         "rounded-xl border p-4 flex flex-col justify-center items-center h-full bg-slate-900 border-slate-800 text-white"
                     )}>
                         <span className="text-[10px] uppercase tracking-wider font-bold mb-1 text-slate-400">Final Result</span>
-                        <span className={cn("text-2xl font-black tracking-tight", resultStatus === 'PASS' ? "text-emerald-400" : "text-rose-400")}>{resultStatus}</span>
+                        <span className={cn("text-2xl font-black tracking-tight",
+                            resultStatus === 'PASS' ? "text-emerald-400" :
+                                resultStatus === 'NA' ? "text-slate-400" : "text-rose-400"
+                        )}>{resultStatus}</span>
                     </div>
                 </div>
             </div>
