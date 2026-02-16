@@ -234,8 +234,7 @@ const PrintResultSummary = ({ tests, classNumber }) => {
 
     const annualTest = sortedTests.find(t => t.typeTag === 'Annual Exam');
     const annualPercentage = annualTest ? `${annualTest.percentage}%` : '-';
-    const preTest = sortedTests.find(t => t.typeTag === 'Pre Board');
-    const prePercentage = preTest ? `${preTest.percentage}%` : '-';
+    const preTests = sortedTests.filter(t => t.typeTag.toLowerCase().includes('pre board'));
 
     const cumulativeTotalObtained = sortedTests.reduce((acc, t) => acc + t.totalObtained, 0);
     const cumulativeTotalMax = sortedTests.reduce((acc, t) => acc + t.totalMax, 0);
@@ -267,7 +266,13 @@ const PrintResultSummary = ({ tests, classNumber }) => {
                 <ResultCard title="Re-Half Yearly" value={reHyPercentage} />
                 <ResultCard title="Annual Exam" value={annualPercentage} />
                 {classNumber === 10 && (
-                    <ResultCard title="Pre Board" value={prePercentage} />
+                    preTests.length > 0 ? (
+                        preTests.map((t) => (
+                            <ResultCard key={t.id} title={t.typeTag} value={`${t.percentage}%`} />
+                        ))
+                    ) : (
+                        <ResultCard title="Pre Board" value="-" />
+                    )
                 )}
                 {/* <ResultCard title="Overall %" value={`${overallPercentage}%`} highlight={true} /> */}
 
@@ -300,7 +305,7 @@ const PrintPerformanceTable = ({ tests }) => {
             'Half Yearly',
             'Re-Half Yearly',
             'Annual Exam',
-            'Pre-Board'
+            'Pre Board'
         ];
 
         const getPriority = (t) => {
