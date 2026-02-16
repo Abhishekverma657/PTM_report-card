@@ -65,7 +65,8 @@ export const transformStudentData = (rawData) => {
 
         // Detect specific Pre Board numbering
         // Handles: "Pre Board 1", "Pre-Board 2", "Pre - Board - 3", etc.
-        const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+        const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i) ||
+            type.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
         if (pbMatch) {
             type = `Pre Board ${pbMatch[1]}`;
         }
@@ -215,7 +216,7 @@ export const transformStudentData = (rawData) => {
     // User requested merging Half Yearly, Re-Half Yearly, and Annual into one graph
     // Aggregate Major Exams (Half Yearly, Re-Half Yearly, Annual, Pre Board)
     const majorAggregates = {};
-    const majorTypes = ['Half Yearly', 'Re-Half Yearly', 'Annual Exam', 'Pre Board'];
+    const majorTypes = ['Half Yearly', 'Re-Half Yearly', 'Annual Exam'];
 
     rawData.forEach(row => {
         let type = (row['Test Type'] || 'Other').trim();
@@ -229,16 +230,20 @@ export const transformStudentData = (rawData) => {
             normalizedType = 'Half Yearly';
         } else if (type.toLowerCase().includes('annual')) {
             normalizedType = 'Annual Exam';
-        } else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) {
-            const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+        } else if (/pre\s*[-]?\s*board/i.test(type) || /pre\s*[-]?\s*board/i.test(testName)) {
+            const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i) ||
+                type.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
             normalizedType = pbMatch ? `Pre Board ${pbMatch[1]}` : 'Pre Board';
         }
 
-        if (majorTypes.includes(normalizedType) || normalizedType.startsWith('Pre Board')) {
+        // Allow detected Pre Board types (normalizedType starts with Pre Board)
+        if (majorTypes.includes(normalizedType) || normalizedType.toLowerCase().startsWith('pre board')) {
             if (!majorAggregates[normalizedType]) {
                 majorAggregates[normalizedType] = {
                     totalObtained: 0,
                     totalMax: 0,
+                    maxSubjectsCount: 0,
+                    attemptedSubjectsCount: 0,
                     dateVal: row['Test Date'], // Capture first date found
                     label: normalizedType
                 };
@@ -250,21 +255,31 @@ export const transformStudentData = (rawData) => {
                 // Always add max marks (fix denominator)
                 if (typeof mm === 'number' && mm > 0) {
                     majorAggregates[normalizedType].totalMax += mm;
+                    majorAggregates[normalizedType].maxSubjectsCount = (majorAggregates[normalizedType].maxSubjectsCount || 0) + 1;
+
                     if (typeof m === 'number') {
                         majorAggregates[normalizedType].totalObtained += m;
+                        majorAggregates[normalizedType].attemptedSubjectsCount = (majorAggregates[normalizedType].attemptedSubjectsCount || 0) + 1;
                     }
                 }
             });
         }
     });
 
-    const majorExams = Object.values(majorAggregates).map(g => ({
-        type: g.label,
-        testName: g.label,
-        date: parseExcelDate(g.dateVal),
-        rawDate: g.dateVal,
-        percentage: g.totalMax > 0 ? parseFloat(((g.totalObtained / g.totalMax) * 100).toFixed(2)) : 0
-    })).sort((a, b) => (a.rawDate || 0) - (b.rawDate || 0));
+    const majorExams = Object.values(majorAggregates).map(g => {
+        // Check for completeness (No NA allowed in graph)
+        const isComplete = g.maxSubjectsCount > 0 && g.attemptedSubjectsCount === g.maxSubjectsCount;
+
+        if (!isComplete) return null; // Skip if incomplete
+
+        return {
+            type: g.label,
+            testName: g.label,
+            date: parseExcelDate(g.dateVal),
+            rawDate: g.dateVal,
+            percentage: g.totalMax > 0 ? parseFloat(((g.totalObtained / g.totalMax) * 100).toFixed(2)) : 0
+        };
+    }).filter(item => item !== null).sort((a, b) => (a.rawDate || 0) - (b.rawDate || 0));
 
     const graphs = {
         st_ot: history.filter(i =>
@@ -301,8 +316,9 @@ export const transformStudentData = (rawData) => {
             if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) normalizedType = 'Re-Half Yearly';
             else if (type.toLowerCase() === 'half yearly') normalizedType = 'Half Yearly';
             else if (type.toLowerCase().includes('annual')) normalizedType = 'Annual Exam';
-            else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) {
-                const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+            else if (/pre\s*[-]?\s*board/i.test(type) || /pre\s*[-]?\s*board/i.test(testName)) {
+                const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i) ||
+                    type.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
                 normalizedType = pbMatch ? `Pre Board ${pbMatch[1]}` : 'Pre Board';
             }
 
