@@ -134,10 +134,12 @@ export const transformStudentData = (rawData) => {
     });
 
     // Convert groups object to array and calculate percentages
+    // Convert groups object to array and calculate percentages
     const resultTests = Object.values(groups).map(group => {
+        const attemptedCount = group.attemptedSubjectsCount || 0;
         // Check if all subjects were attempted
         const isComplete = group.maxSubjectsCount > 0 &&
-            (group.attemptedSubjectsCount || 0) === group.maxSubjectsCount;
+            attemptedCount === group.maxSubjectsCount;
 
         let percentage = '-';
         if (group.totalMax > 0) {
@@ -158,9 +160,10 @@ export const transformStudentData = (rawData) => {
             totalObtained: parseFloat(group.totalObtained.toFixed(2)),
             totalMax: group.totalMax,
             percentage: percentage,
-            subjects: group.subjects
+            subjects: group.subjects,
+            attemptedCount: attemptedCount
         };
-    }).filter(t => t.totalMax > 0); // Filter out tests where student didn't attempt anything (Total MM is 0)
+    }).filter(t => t.totalMax > 0 && t.attemptedCount > 0); // Filter out tests where student didn't attempt anything
 
     // Create a chronological history for the graph (ALL tests, no consolidation)
     const history = rawData.map(row => {

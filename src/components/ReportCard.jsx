@@ -236,8 +236,11 @@ const PrintResultSummary = ({ tests, classNumber }) => {
     const overallVal = cumulativeTotalMax > 0 ? (cumulativeTotalObtained / cumulativeTotalMax) * 100 : 0;
     const overallPercentage = cumulativeTotalMax > 0 ? overallVal.toFixed(2) : '0.00';
 
-    const hasNA = tests.some(t => t.percentage === 'NA');
-    const resultStatus = hasNA ? 'NA' : (overallVal >= 33 ? 'PASS' : '-');
+    // Final Result is NA only if a MAJOR exam has NA. Minor exams just affect the average.
+    const isMajor = (t) => ['Half Yearly', 'Re-Half Yearly', 'Annual Exam'].includes(t.typeTag) || t.typeTag.toLowerCase().includes('pre board');
+    const hasMajorNA = tests.some(t => isMajor(t) && t.percentage === 'NA');
+
+    const resultStatus = hasMajorNA ? 'NA' : (overallVal >= 33 ? 'PASS' : '-');
 
     const ResultCard = ({ title, value, subtext, highlight }) => (
         <div className={cn(
