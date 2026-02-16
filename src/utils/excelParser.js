@@ -63,11 +63,24 @@ export const transformStudentData = (rawData) => {
             type = 'Half Yearly'; // Normalize case/spacing
         }
 
+        // Detect specific Pre Board numbering
+        // Handles: "Pre Board 1", "Pre-Board 2", "Pre - Board - 3", etc.
+        const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+        if (pbMatch) {
+            type = `Pre Board ${pbMatch[1]}`;
+        }
+        // Detect specific Part Test numbering
+        const ptMatch = testName.match(/part\s*[-]?\s*test\s*[-]?\s*(\d+)/i);
+        if (ptMatch) {
+            // Optional: normalize Part Tests if needed, or just type
+            // type = `Part Test ${ptMatch[1]}`;
+        }
+
         let groupKey;
         let isConsolidated = true;
 
         // Logic: ST/OT should be separate (Date-wise/Test-wise). Others (Annual, HY, Re-HY) merged or grouped by correct Name.
-        if (type === 'ST/OT' || type.includes('ST') || type.includes('OT') || type.toLowerCase().includes('part test')) {
+        if (type === 'ST/OT' || type.includes('ST') || type.includes('OT') || type.includes('AT') || type.toLowerCase().includes('part test')) {
             groupKey = `STOT_${testName}_${row['Test Date']}_${index}`;
             isConsolidated = false;
         } else {
@@ -205,10 +218,11 @@ export const transformStudentData = (rawData) => {
         } else if (type.toLowerCase().includes('annual')) {
             normalizedType = 'Annual Exam';
         } else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) {
-            normalizedType = 'Pre Board';
+            const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+            normalizedType = pbMatch ? `Pre Board ${pbMatch[1]}` : 'Pre Board';
         }
 
-        if (majorTypes.includes(normalizedType)) {
+        if (majorTypes.includes(normalizedType) || normalizedType.startsWith('Pre Board')) {
             if (!majorAggregates[normalizedType]) {
                 majorAggregates[normalizedType] = {
                     totalObtained: 0,
@@ -244,6 +258,7 @@ export const transformStudentData = (rawData) => {
             i.type === 'ST/OT' ||
             i.type.includes('ST') ||
             i.type.includes('OT') ||
+            i.type.includes('AT') ||
             i.type.toLowerCase().includes('part test')
         ),
         major: majorExams
@@ -263,7 +278,7 @@ export const transformStudentData = (rawData) => {
         let category = null;
 
         // Categorize
-        if (type === 'ST/OT' || type.includes('ST') || type.includes('OT')) {
+        if (type === 'ST/OT' || type.includes('ST') || type.includes('OT') || type.includes('AT')) {
             category = 'ST/OT';
         } else if (type.toLowerCase().includes('part test')) {
             category = 'Part Test';
@@ -273,9 +288,12 @@ export const transformStudentData = (rawData) => {
             if (testName.toLowerCase().includes('re half yearly') || testName.toLowerCase().includes('re-half yearly')) normalizedType = 'Re-Half Yearly';
             else if (type.toLowerCase() === 'half yearly') normalizedType = 'Half Yearly';
             else if (type.toLowerCase().includes('annual')) normalizedType = 'Annual Exam';
-            else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) normalizedType = 'Pre Board';
+            else if (type.toLowerCase().includes('pre board') || testName.toLowerCase().includes('pre board')) {
+                const pbMatch = testName.match(/pre\s*[-]?\s*board\s*[-]?\s*(\d+)/i);
+                normalizedType = pbMatch ? `Pre Board ${pbMatch[1]}` : 'Pre Board';
+            }
 
-            if (['Half Yearly', 'Re-Half Yearly', 'Annual Exam', 'Pre Board'].includes(normalizedType)) {
+            if (['Half Yearly', 'Re-Half Yearly', 'Annual Exam'].includes(normalizedType) || normalizedType.startsWith('Pre Board')) {
                 category = 'Major Exams';
             }
         }
